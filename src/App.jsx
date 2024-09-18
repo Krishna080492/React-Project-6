@@ -7,14 +7,15 @@ function App() {
   let [movie, setMovie] = useState({})
   let [star, setStar] = useState(0);
   let [feedback, setFeedback] = useState({});
-  let [feedbackList, setFeedbackList] = useState([])
+  let [feedbackList, setFeedbackList] = useState([]);
+  let [index, setIndex] = useState(-1)
 
   useEffect(() => {
     const storedFeedbacks = JSON.parse(sessionStorage.getItem('feedbackList'));
     if (storedFeedbacks) {
       setFeedbackList(storedFeedbacks);
     }
-    return (()=>{
+    return (() => {
       sessionStorage.clear()
     })
   }, []);
@@ -38,13 +39,36 @@ function App() {
 
   let handleSubmit = (e) => {
     e.preventDefault();
-    let feedList = [...feedbackList, feedback];
+
+    let feedList;
+    if (index != -1) {
+      feedList = [...feedbackList];
+      feedList[index] = feedback;
+      setIndex(-1);
+    } else {
+      feedList = [...feedbackList, feedback];
+    }
     setFeedbackList(feedList);
     // console.log(feedList);
-    sessionStorage.setItem('feedbackList', JSON.stringify(feedbackList));
+    sessionStorage.setItem('feedbackList', JSON.stringify(feedList));
     setMovie({});
     setStar(0);
     setFeedback({});
+  }
+
+  let deleteData = (pos) => {
+    feedbackList.splice(pos, 1);
+    let newFeedbackList = [...feedbackList];
+    setFeedbackList(newFeedbackList);
+    sessionStorage.setItem("feedbackList", JSON.stringify(newFeedbackList))
+  }
+
+  let editData = (pos) => {
+    let editFeedback = feedbackList[pos];
+    setFeedback(editFeedback);
+    setMovie({ movie: editFeedback.movie });
+    setStar(editFeedback.star);
+    setIndex(pos);
   }
   return (
     <>
@@ -70,26 +94,38 @@ function App() {
             ></textarea>
           </div>
           <div className="form-group">
-            <input type="submit" value="Submit" className="submit-button" />
+            <button
+              style={{
+                backgroundColor: "#093679", color: "#ffe229", padding: "10px", border: "0", cursor: "pointer",
+              }}>
+              {index !== -1 ? 'Update' : 'Submit'}
+            </button>
           </div>
         </form>
         <br /><br />
         <table align="center" border={1} cellPadding={10}>
           <thead>
             <tr>
+              <th>Movie</th>
               <th>Reviews</th>
               <th>Comments</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {feedbackList.map((val, ind) => (
               <tr key={ind}>
+                <td>{val.movie}</td>
                 <td>
                   {[1, 2, 3, 4, 5].map((v, i) => (
                     <FaStar key={i} color={val.star >= v ? "#ffe229" : "#093679"} />
                   ))}
                 </td>
                 <td>{val.feedback}</td>
+                <td>
+                  <button onClick={() => deleteData(ind)} style={{ marginRight: "10px" }}>Delete</button>
+                  <button onClick={() => editData(ind)}>Edit</button>
+                </td>
               </tr>
             ))}
           </tbody>
